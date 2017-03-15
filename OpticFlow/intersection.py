@@ -47,7 +47,7 @@ def sphere_line_intersection(l1, u, sp, r):
           D = 0
     elif i > 0.0:
         # first intersection
-        print('two intersections')
+        #print('two intersections')
         mu = (-b + sqrt(i)) / (2.0 * a)
         p1 = (l1[0] + mu * (u[0]),
               l1[1] + mu * (u[1]),
@@ -56,7 +56,6 @@ def sphere_line_intersection(l1, u, sp, r):
         v1 = np.array(p1)-l1 
         if (np.sum((v1 >= 0 )*1-(u>= 0)*1)) == 0:
           D1 = LA.norm(np.array(v1))
-          print(D1, 'D1') 
           D = D1 
           #print('True 1')
         # second intersection
@@ -70,7 +69,6 @@ def sphere_line_intersection(l1, u, sp, r):
 
           D2 = LA.norm(np.array(v1))
           if D1 != None:
-            print(D2, 'D2')
             D = np.min([D,D2])
           else:
             D = D2
