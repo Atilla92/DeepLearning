@@ -1,0 +1,21 @@
+
+Instructions for running files:
+
+Initialize variables for Delanauy and Optic Flow computation:
+
+    1. Obstacles
+    2. Initial Variables
+
+
+Compute Optic Flow:
+
+    3. Rotation
+    4. Optic Flow Offline
+    5. Intersection Sphere
+    6. Optic Flow Online
+    
+Compute Delaunay:
+
+    3. Delanauy
+    
+    
