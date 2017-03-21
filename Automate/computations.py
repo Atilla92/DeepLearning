@@ -4,6 +4,10 @@ from random import randint
 from numpy import linalg as LA
 from scipy.spatial import ConvexHull
 import matplotlib.path as mltp
+import matplotlib.pylab as plt
+from intersection import sphere_line_intersection 
+from scipy.spatial import Delaunay
+from graphics import *
 
 def rand_obstacle(maxDis,maxRadius, numObj, SF1):
 	s =[]
@@ -78,3 +82,129 @@ def velocity_rotation(heading, velocity):
 	rot = rot.reshape(3,3)
 	vel_rot = np.dot(rot, velocity)
 	return vel_rot
+
+def unit_vectors(fov_x, fov_y, res_x, res_y):
+	phis   = np.linspace(-fov_x, fov_x, res_x)
+	thetas = np.linspace(-fov_y, fov_y, res_y)
+	layout = np.array([[phi, theta] 
+                   for theta in thetas
+                   for phi in phis])
+	# Compute unit vectors for each pixel
+	u = np.array([[ np.cos(theta) * np.cos(phi),
+                np.cos(theta) * np.sin(phi),
+                np.sin(theta)] for [phi, theta] in layout])
+	# Compute a: lateral vector of the base (a, b, u)
+	z = np.array([0, 0, 1])
+	a = np.cross(z[np.newaxis], u)
+	a /= np.linalg.norm(a, axis=1)[:,np.newaxis]
+	# Compute b: vertical vector of the base (a, b, u)
+	b = np.cross(u, a)
+	return u,a, b, layout 
+
+def display_vectors(X, V):
+    fig, axarr = plt.subplots(nrows=1, 
+                              ncols=2, 
+                              figsize=[10,5])
+    # Top view
+    for [ax, title, xlabel, ylabel, xx, yy, uu, vv] in zip(axarr, 
+                                                   ['Top view', 'Side view'],
+                                                   ['X', 'X'],
+                                                   ['Y', 'Z'],
+                                                   [X[0], X[0]],
+                                                   [X[1], X[2]],
+                                                   [V[0], V[0]],
+                                                   [V[1], V[2]]):
+        ax.set_title(title)
+        ax.set_xlabel(xlabel)
+        ax.set_ylabel(ylabel)
+        ax.set_xlim([-1, 1])
+        ax.set_ylim([-1, 1])
+        ax.quiver(xx, yy, uu, vv)
+
+    fig.tight_layout()
+
+
+def intersection_obstacles(unit, obstacle, position, ):
+
+	D = np.array([[sphere_line_intersection(position, u,  obs[0:3], obs[3]) for u in unit] for obs in obstacle]).T
+	Df = []
+	for d in D:
+	    if np.sum(d) > 0:
+	        Df.append(d[np.min(np.nonzero(d))])
+	    else:
+	        Df.append(0)
+	return Df
+
+def optic_flow(unit, D_vec,a,b,v):
+	mat = np.column_stack([unit, D_vec])
+	D_vec = np.array(D_vec)
+	p = []
+	for i in mat:
+	    if i[3]!= 0:       
+	        p.append( - (v - np.dot(i[0:3], v[np.newaxis,:].T) * i[0:3]) / (i[3])) 
+	        #print(p)
+	    if i[3]== 0:
+	        p.append([0,0,0])
+	p = np.array(p)
+	# # Project 3d optic flow vector on (a, b)
+	ofx = np.sum(p*a, axis=1)
+	ofy = np.sum(p*b, axis=1)
+	return ofx, ofy
+
+def delanauy_heading(position, obstacles,heading):
+	# Obstacles, radius, and position
+	points = np.array(obstacles)[:,0:2]
+	p = position[0:2]
+	r = np.array(obstacles) [:,3]
+	# Heading in cartesian coordinates
+	head = np.array([np.cos(heading), np.sin(heading)])
+	# Determine Delanauy triangles, simplices and respective points
+	tri = Delaunay(points)
+	median = points[tri.simplices]
+	# Determine in which triangle point is located
+	triangle_index = tri.find_simplex(p)
+	# Extract properties of this triangle, radius, points
+	points_index = points[tri.simplices[triangle_index]]
+	radius_index = r[tri.simplices[triangle_index]]
+	# Add last first element again for loop
+	rads= np.hstack([radius_index, radius_index[0]])
+	base = np.vstack([points_index, points_index[0]])
+	# Estimate median of triangle in which the drone is located
+	# Median with raidus taken into acount, and median without radius taken into account 
+	median =np.array([ [
+                     base[i], #0 first point [x,y]
+                     base[i+1], #1 next point [x,y]
+                    LA.norm(   #2 gap with radius scalar
+                        np.add(base[i],
+                            np.multiply(rads[i],
+                                    np.divide(([base[i+1]-base[i]]),
+                                             LA.norm([base[i+1]-base[i]]))))
+                            -
+                        np.add(base[i+1],
+                        np.multiply(-rads[i+1],
+                                    np.divide(([base[i+1]-base[i]]),
+                                             LA.norm([base[i+1]-base[i]]))))),
+                    LA.norm([base[i]- base[i+1]]), #3 gap without radius, scalar
+                    (np.add(base[i], # 4 midpoint with radius
+                            np.multiply(rads[i],
+                                    np.divide(([base[i+1]-base[i]]),
+                                             LA.norm([base[i+1]-base[i]]))))
+                                +
+                        np.add(base[i+1],
+                        np.multiply(-rads[i+1],
+                                    np.divide(([base[i+1]-base[i]]),
+                                             LA.norm([base[i+1]-base[i]])))))/2,
+                    (base[i]+base[i+1])/2 #5 midpoint without radius
+            
+                  
+                   ]
+
+                  for i in range(len(points_index)) ])
+	winner_index =median[np.argmax(median[:,2])]
+	dx_dy = winner_index[4]-p
+	y1 = dx_dy[0]
+	psi = np.arctan2(y1[1],y1[0])
+	if psi<0:
+	    psi = 2*np.pi+psi
+	new_heading = psi-heading 
+	return new_heading
