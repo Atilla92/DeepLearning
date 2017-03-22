@@ -9,7 +9,7 @@ from graphics import *
 from computations import *
 from intersection import sphere_line_intersection
 import glob, os, os.path
-from safeFiles impott *
+from safeFiles import *
 #############################################################
 # Initial restrictions on obstacles
 area = 10
@@ -34,7 +34,7 @@ res_x = 100 #amount of pixels along azimuth
 res_y = 21 # amount of pixels along elevation
 ############################################################################
 ############################################################################
-numSamples = 3
+numSamples = 10
 # Do one sequence
 ## 1 Create Obstacles
 start_time = time.time()
@@ -46,23 +46,33 @@ u, a, b , layout= unit_vectors(fov_x, fov_y, res_x, res_y)
 os.chdir("/home/atilla/Documents/DeepLearning/Automate/")
 files = [file for file in glob.glob("*.hdf5")]
 print(files)
-
+#print(obstacles.shape)
 test =  'mytestfile.hdf5'
-save_obstacles(test, obstacles, )
+save_obstacles(test, files, np.array(obstacles),res_x, res_y, numObj, fov_x, fov_y )
 
 ###########################################################################
-velocity = rand_velocity(maxVel)
-heading = rand_heading(maxHeading)
-position = rand_position(obstacles, area, SF2)
-############################################################################
+samples = rand_samples(maxVel, maxHeading, obstacles, area, SF2, numSamples)
+
+print( len(samples))
 
 
-obstacles_rot = object_rotation(heading, obstacles)
-velocity_rot = velocity_rotation(heading, velocity)
-intersection_points = intersection_obstacles(u, obstacles_rot, position )
-ofx, ofy = optic_flow(u, intersection_points, a,b, velocity_rot)
-heading_new = delanauy_heading(position, obstacles, heading)
-
+###########################################################################
+	# velocity = rand_velocity(maxVel)
+	# heading = rand_heading(maxHeading)
+	# position = rand_position(obstacles, area, SF2)
+num=1
+for sam in samples:
+	position = sam[0]
+	velocity = sam[1]
+	heading = sam[2]
+	obstacles_rot = object_rotation(heading, obstacles)
+	velocity_rot = velocity_rotation(heading, velocity)
+	intersection_points = intersection_obstacles(u, obstacles_rot, position )
+	ofx, ofy = optic_flow(u, intersection_points, a,b, velocity_rot)
+	#print(ofx.shape)
+	heading_new = delanauy_heading(position, obstacles, heading)
+	save_results(num, test, ofx, ofy, heading_new,position, velocity,heading )
+	num=num+1
 
 
 ############################################################################
@@ -70,17 +80,27 @@ end_time = time.time()-start_time
 print('finished', end_time)
 
 
+############################################################################
+f = h5py.File(test)
+listf = [key for key in f.keys() if 'tryout' in key]
+# xOF = [f[x]['ofx'][:] for x in listf]
+# print(listf,np.array(xOF).shape, np.array(xOF[1]).shape)
 
-
+#### cuidado q trayout nombre lo tienes que camvbiar en varios sitios
+#####  need to store layout as well i suppose
 
 ####### SANITY CHECK ######
+
+# print(obstacles, obstacles_rot.shape, velocity, velocity_rot,u.shape , a.shape, len(intersection_points), 
+# 	len(ofx), len(ofy),
+# 			heading_new)
+
+
 
 # display_vectors(u.T, u.T)
 #display_vectors(u.T, b.T)
 #plt.show()
-print(obstacles, obstacles_rot.shape, velocity, velocity_rot,u.shape , a.shape, len(intersection_points), 
-	len(ofx), len(ofy),
-			heading_new)
+
 # plt.quiver(layout[:,0], layout[:,1], 
 #            ofx, ofy, scale =5)
 # plt.show()
