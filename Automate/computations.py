@@ -208,3 +208,26 @@ def delanauy_heading(position, obstacles,heading):
 	    psi = 2*np.pi+psi
 	new_heading = psi-heading 
 	return new_heading
+
+
+def display_vectors(X, V):
+    fig, axarr = plt.subplots(nrows=1, 
+                              ncols=2, 
+                              figsize=[10,5])
+    # Top view
+    for [ax, title, xlabel, ylabel, xx, yy, uu, vv] in zip(axarr, 
+                                                   ['Top view', 'Side view'],
+                                                   ['X', 'X'],
+                                                   ['Y', 'Z'],
+                                                   [X[0], X[0]],
+                                                   [X[1], X[2]],
+                                                   [V[0], V[0]],
+                                                   [V[1], V[2]]):
+        ax.set_title(title)
+        ax.set_xlabel(xlabel)
+        ax.set_ylabel(ylabel)
+        ax.set_xlim([-1, 1])
+        ax.set_ylim([-1, 1])
+        ax.quiver(xx, yy, uu, vv)
+
+    fig.tight_layout()

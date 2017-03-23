@@ -10,6 +10,7 @@ from computations import *
 from intersection import sphere_line_intersection
 import glob, os, os.path
 from safeFiles import *
+from runfiles import *
 #############################################################
 # Initial restrictions on obstacles
 area = 10
@@ -28,61 +29,84 @@ maxHeading = np.pi*2
 SF2 = 1.5 # safety factor
 
 # Set eye parameters:
-fov_x  = np.pi/2 #half FOV along azimuth in radians
+fov_x  = np.pi #half FOV along azimuth in radians
 fov_y = np.pi/4 # half FOV along elevation in radians
-res_x = 100 #amount of pixels along azimuth
-res_y = 21 # amount of pixels along elevation
+res_x = 360 #amount of pixels along azimuth
+res_y = 30# amount of pixels along elevation
 ############################################################################
 ############################################################################
-numSamples = 10
+
+
+num_random_param = 2
+pathFiles = "/home/atilla/Documents/DeepLearning/Automate/"
+group_name = 'trial_'
 # Do one sequence
 ## 1 Create Obstacles
 start_time = time.time()
+num_scenes = 2
+file_name = 'test2_'
+for i in range(num_scenes):
+	#test =  'mytestfile2.hdf5'
+	test = 'test2_'+time.strftime('%F-%T')+'.hdf5'
 
-###########################################################################
-obstacles = rand_obstacle(maxDis,maxRadius, numObj, SF1)
-u, a, b , layout= unit_vectors(fov_x, fov_y, res_x, res_y)
-############################################################################
-os.chdir("/home/atilla/Documents/DeepLearning/Automate/")
-files = [file for file in glob.glob("*.hdf5")]
-print(files)
-#print(obstacles.shape)
-test =  'mytestfile.hdf5'
-save_obstacles(test, files, np.array(obstacles),res_x, res_y, numObj, fov_x, fov_y )
-
-###########################################################################
-samples = rand_samples(maxVel, maxHeading, obstacles, area, SF2, numSamples)
-
-print( len(samples))
-
-
-###########################################################################
-	# velocity = rand_velocity(maxVel)
-	# heading = rand_heading(maxHeading)
-	# position = rand_position(obstacles, area, SF2)
-num=1
-for sam in samples:
-	position = sam[0]
-	velocity = sam[1]
-	heading = sam[2]
-	obstacles_rot = object_rotation(heading, obstacles)
-	velocity_rot = velocity_rotation(heading, velocity)
-	intersection_points = intersection_obstacles(u, obstacles_rot, position )
-	ofx, ofy = optic_flow(u, intersection_points, a,b, velocity_rot)
-	#print(ofx.shape)
-	heading_new = delanauy_heading(position, obstacles, heading)
-	save_results(num, test, ofx, ofy, heading_new,position, velocity,heading )
-	num=num+1
-
+	create_samples(maxDis, maxRadius, numObj, SF1, fov_x, fov_y, res_x, res_y,
+					pathFiles, test, maxVel, maxHeading, area, SF2, num_random_param, group_name)
 
 ############################################################################
 end_time = time.time()-start_time
 print('finished', end_time)
 
-
 ############################################################################
 f = h5py.File(test)
-listf = [key for key in f.keys() if 'tryout' in key]
+listf = [key for key in f.keys() if group_name in key]
+
+print(listf)
+
+###########################################################################
+# obstacles = rand_obstacle(maxDis,maxRadius, numObj, SF1)
+# u, a, b , layout= unit_vectors(fov_x, fov_y, res_x, res_y)
+# ############################################################################
+
+# files= find_files(pathFiles)
+
+# #print(obstacles.shape)
+
+# save_obstacles(test, files, np.array(obstacles),res_x, res_y, numObj, fov_x, fov_y )
+
+# ###########################################################################
+# samples = rand_samples(maxVel, maxHeading, obstacles, area, SF2, numSamples)
+
+# #print( len(samples))
+
+
+# ###########################################################################
+# 	# velocity = rand_velocity(maxVel)
+# 	# heading = rand_heading(maxHeading)
+# 	# position = rand_position(obstacles, area, SF2)
+# ################################################################################
+
+# num=1
+# for sam in samples:
+# 	position = sam[0]
+# 	velocity = sam[1]
+# 	heading = sam[2]
+# 	obstacles_rot = object_rotation(heading, obstacles)
+# 	velocity_rot = velocity_rotation(heading, velocity)
+# 	intersection_points = intersection_obstacles(u, obstacles_rot, position )
+# 	ofx, ofy = optic_flow(u, intersection_points, a,b, velocity_rot)
+# 	#print(ofx.shape)
+# 	heading_new = delanauy_heading(position, obstacles, heading)
+# 	save_results(num, test, ofx, ofy, heading_new,position, velocity,heading )
+# 	num=num+1
+
+
+
+# plt.quiver(layout[:,0], layout[:,1], 
+#            ofx, ofy, scale =5)
+# plt.show()
+
+
+
 # xOF = [f[x]['ofx'][:] for x in listf]
 # print(listf,np.array(xOF).shape, np.array(xOF[1]).shape)
 

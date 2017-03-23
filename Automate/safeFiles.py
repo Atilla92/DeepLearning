@@ -1,6 +1,15 @@
 import h5py
 from computations import*
-def save_obstacles(test, files,obstacles, Resolutionx, Resolutiony, numberObj, FOVx,FOVy):
+from profilestats import profile
+import glob, os, os.path
+
+def find_files(pathFiles):
+    os.chdir(pathFiles)
+    files = [file for file in glob.glob("*.hdf5")]
+    #print(files)
+    return files
+
+def save_obstacles(test, files,obstacles, Resolutionx, Resolutiony, numberObj, FOVx,FOVy, group_name):
     #test= 'mytestfile.hdf5'
     #test = 'test'+time.strftime('%F-%T')+'.hdf5'
     exist = False
@@ -28,7 +37,8 @@ def save_obstacles(test, files,obstacles, Resolutionx, Resolutiony, numberObj, F
         
     data.attrs['Resolution']= [Resolutionx, Resolutiony]
     data.attrs['NumberObjects']=numberObj
-    data.attrs['FOV']=[FOVx,FOVy]    
+    data.attrs['FOV']=[FOVx,FOVy] 
+    data.attrs['Nomenclature']= group_name   
     f.close()
 
 
@@ -41,11 +51,10 @@ def rand_samples(maxVel, maxHeading, obstacles, area, SF2, numSamples):
                    for vel in velocity
                     for head in heading])
     return samples
-
-def save_results(num, test, ofx, ofy, new_heading,position, velocity,heading  ):
+def save_results(num, test, ofx, ofy, new_heading,position, velocity,heading, group_name  ):
     f =h5py.File(test)
     #data = f['obstacles']
-    name = 'tryout_'+str(num)
+    name = group_name+str(num)
     #print(i[0],i[1],i[2], name)
     if name in f:
         grp = f[name]
