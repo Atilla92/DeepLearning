@@ -13,10 +13,10 @@ from safeFiles import *
 from runfiles import *
 #############################################################
 # Initial restrictions on obstacles
-area = 10
+
 numObj = 10
-minRadius = 2
-maxRadius = 4
+minRadius = 1
+maxRadius = 2
 maxDis= 10
 area = 10
 #Safety factor for intersection between obstalces
@@ -37,17 +37,17 @@ res_y = 30# amount of pixels along elevation
 ############################################################################
 
 
-num_random_param = 2
-pathFiles = "/home/atilla/Documents/DeepLearning/Automate/"
+num_random_param = 1
+pathFiles = "/home/atilla/Documents/DeepLearning/Test/"
 group_name = 'trial_'
 # Do one sequence
 ## 1 Create Obstacles
 start_time = time.time()
-num_scenes = 2
-file_name = 'test2_'
+num_scenes = 1
+file_name = 'test6_'
 for i in range(num_scenes):
 	#test =  'mytestfile2.hdf5'
-	test = 'test2_'+time.strftime('%F-%T')+'.hdf5'
+	test = file_name+'.hdf5'#+time.strftime('%F-%T')+'.hdf5'
 
 	create_samples(maxDis, maxRadius, numObj, SF1, fov_x, fov_y, res_x, res_y,
 					pathFiles, test, maxVel, maxHeading, area, SF2, num_random_param, group_name)
@@ -60,7 +60,7 @@ print('finished', end_time)
 f = h5py.File(test)
 listf = [key for key in f.keys() if group_name in key]
 
-print(listf)
+plt.show()
 
 ###########################################################################
 # obstacles = rand_obstacle(maxDis,maxRadius, numObj, SF1)
